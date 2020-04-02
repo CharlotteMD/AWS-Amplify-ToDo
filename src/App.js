@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 
 import API, { graphqlOperation } from "@aws-amplify/api";
 import PubSub from "@aws-amplify/pubsub";
@@ -32,21 +32,19 @@ const reducer = (state, action) => {
   }
 };
 
-async function createNewTodo() {
-  const todo = { name: "Use AWS AppSync", description: "RealTime and Offline" };
-  await API.graphql(graphqlOperation(createTodo, { input: todo }));
+async function createNewTodo(values) {
+  await API.graphql(graphqlOperation(createTodo, { input: values }));
 }
 
 async function deleteThisTodo({ todo }) {
-  console.log(todo);
   delete todo.name;
   delete todo.description;
-  console.log(todo);
   await API.graphql(graphqlOperation(deleteTodo, { input: todo }));
 }
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [values, setValues] = useState({ name: "", description: "" });
 
   useEffect(() => {
     async function getData() {
@@ -65,15 +63,51 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleInputChange = e => {
+    const { name, value } = e.target;
+    setValues({ ...values, [name]: value });
+    console.log("Value: ", values);
+  };
+
+  const submitToDo = () => {
+    const { name, description } = values;
+    if (!name || !description) return;
+    console.log("here");
+    createNewTodo(values);
+    console.log("done");
+  };
+
   return (
     <div className="App">
+      <form>
+        <label>
+          Title:
+          <input
+            type="text"
+            name="name"
+            value={values.name}
+            onChange={handleInputChange}
+          />
+        </label>
+        <label>
+          Description:
+          <input
+            type="text"
+            name="description"
+            value={values.description}
+            onChange={handleInputChange}
+          />
+        </label>
+        <input type="submit" value="Submit" onClick={submitToDo} />
+      </form>
+
       <button onClick={createNewTodo}>Add Todo</button>
-      <div>
+      <div className="todoContainer">
         {state.todos.length > 0 ? (
           state.todos.map(todo => (
-            <div>
+            <div className="todos">
               <p key={todo.id}>
-                {todo.name} : {todo.description} : {todo.id}
+                {todo.name} : {todo.description}
               </p>
               <button onClick={() => deleteThisTodo({ todo })}>X</button>
             </div>
