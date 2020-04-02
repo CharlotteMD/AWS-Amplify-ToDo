@@ -3,7 +3,7 @@ import React, { useEffect, useReducer } from "react";
 import API, { graphqlOperation } from "@aws-amplify/api";
 import PubSub from "@aws-amplify/pubsub";
 
-import { createTodo } from "./graphql/mutations";
+import { createTodo, deleteTodo } from "./graphql/mutations";
 import { listTodos } from "./graphql/queries";
 import { onCreateTodo } from "./graphql/subscriptions";
 
@@ -37,6 +37,14 @@ async function createNewTodo() {
   await API.graphql(graphqlOperation(createTodo, { input: todo }));
 }
 
+async function deleteThisTodo({ todo }) {
+  console.log(todo);
+  delete todo.name;
+  delete todo.description;
+  console.log(todo);
+  await API.graphql(graphqlOperation(deleteTodo, { input: todo }));
+}
+
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -63,9 +71,12 @@ function App() {
       <div>
         {state.todos.length > 0 ? (
           state.todos.map(todo => (
-            <p key={todo.id}>
-              {todo.name} : {todo.description}
-            </p>
+            <div>
+              <p key={todo.id}>
+                {todo.name} : {todo.description} : {todo.id}
+              </p>
+              <button onClick={() => deleteThisTodo({ todo })}>X</button>
+            </div>
           ))
         ) : (
           <p>Add some todos!</p>
